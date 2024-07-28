@@ -1,3 +1,10 @@
+#if __cplusplus >= 202002L
+#define PETRICKS_ENABLE_CONCEPTS
+#endif
+
+#ifdef PETRICKS_ENABLE_CONCEPTS
+#include <concepts>
+#endif
 #include "./rt-basics.hpp"
 #include "./rt-reflect.hpp"
 
@@ -12,6 +19,21 @@
 namespace pe {
 namespace runtime {
 
+
+#ifdef PETRICKS_ENABLE_CONCEPTS
+template <typename T>
+concept winapi_provider =
+        requires(T self, handle hModule, const char* lpProcName) { { self.GetProcAddress(hModule, lpProcName) } -> std::convertible_to<winproc>; }
+    &&  requires(T self, const char* lpModuleName) { { self.GetModuleHandleA(lpModuleName) } -> std::convertible_to<handle>; }
+    &&  requires(T self, const wchar_t* lpModuleName) { { self.GetModuleHandleW(lpModuleName) } -> std::convertible_to<handle>; }
+    &&  requires(T self, const char* lpLibFileName) { { self.LoadLibraryA(lpLibFileName) } -> std::convertible_to<handle>; }
+    &&  requires(T self, const wchar_t* lpLibFileName) { { self.LoadLibraryW(lpLibFileName) } -> std::convertible_to<handle>; }
+    &&  requires(T self, handle hLibModule) { { self.FreeLibrary(hLibModule) } -> std::convertible_to<winbool>; }
+    &&  requires(T self, void* lpAddress, size_t dwSize, u32 flAllocationType, u32 flProtect) { { self.VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect) } -> std::convertible_to<void*>; }
+    &&  requires(T self, void* lpAddress, size_t dwSize, u32 dwFreeType) { { self.VirtualFree(lpAddress, dwSize, dwFreeType) } -> std::convertible_to<winbool>; }
+    &&  requires(T self, const void* lpAddress, memory_basic_information* lpBuffer, size_t dwLength) { { self.VirtualQuery(lpAddress, lpBuffer, dwLength) } -> std::convertible_to<size_t>; }
+    &&  requires(T self, void* lpAddress, size_t dwSize, u32 flNewProtect, u32* lpflOldProtect) { { self.VirtualProtect(lpAddress, dwSize, flNewProtect, lpflOldProtect) } -> std::convertible_to<winbool>; };
+#endif
 
 struct winapi_dynamic {
     handle hKernel32;
@@ -61,14 +83,17 @@ struct winapi_dynamic {
 
 // ApiPtrT can be any valid pointer, including unique_ptr and shared_ptr
 template <typename ApiPtrT = winapi_dynamic*>
+#ifdef PETRICKS_ENABLE_CONCEPTS
+    requires winapi_provider<decltype(*std::declval<ApiPtrT>())>
+#endif
 struct winapi_dynamic_ref {
     ApiPtrT ptr;
     // boilerplate forwarding
     winproc GetProcAddress(handle hModule, const char* lpProcName) { return ptr->GetProcAddress(hModule, lpProcName); }
     handle GetModuleHandleA(const char* lpModuleName) { return ptr->GetModuleHandleA(lpModuleName); }
     handle GetModuleHandleW(const wchar_t* lpModuleName) { return ptr->GetModuleHandleW(lpModuleName); }
-    handle LoadLibraryA(char* lpLibFileName) { return ptr->LoadLibraryA(lpLibFileName); }
-    handle LoadLibraryW(wchar_t* lpLibFileName) { return ptr->LoadLibraryW(lpLibFileName); }
+    handle LoadLibraryA(const char* lpLibFileName) { return ptr->LoadLibraryA(lpLibFileName); }
+    handle LoadLibraryW(const wchar_t* lpLibFileName) { return ptr->LoadLibraryW(lpLibFileName); }
     winbool FreeLibrary(handle hLibModule) { return ptr->FreeLibrary(hLibModule); }
     void* VirtualAlloc(void* lpAddress, size_t dwSize, u32 flAllocationType, u32 flProtect) { return ptr->VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect); }
     winbool VirtualFree(void* lpAddress, size_t dwSize, u32 dwFreeType) { return ptr->VirtualFree(lpAddress, dwSize, dwFreeType); }
@@ -112,8 +137,8 @@ inline winapi_dynamic& __api() {
 static inline winproc GetProcAddress(handle hModule, const char* lpProcName) { return __api().GetProcAddress(hModule, lpProcName); }
 static inline handle GetModuleHandleA(const char* lpModuleName) { return __api().GetModuleHandleA(lpModuleName); }
 static inline handle GetModuleHandleW(const wchar_t* lpModuleName) { return __api().GetModuleHandleW(lpModuleName); }
-static inline handle LoadLibraryA(char* lpLibFileName) { return __api().LoadLibraryA(lpLibFileName); }
-static inline handle LoadLibraryW(wchar_t* lpLibFileName) { return __api().LoadLibraryW(lpLibFileName); }
+static inline handle LoadLibraryA(const char* lpLibFileName) { return __api().LoadLibraryA(lpLibFileName); }
+static inline handle LoadLibraryW(const wchar_t* lpLibFileName) { return __api().LoadLibraryW(lpLibFileName); }
 static inline winbool FreeLibrary(handle hLibModule) { return __api().FreeLibrary(hLibModule); }
 static inline void* VirtualAlloc(void* lpAddress, size_t dwSize, u32 flAllocationType, u32 flProtect) { return __api().VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect); }
 static inline winbool VirtualFree(void* lpAddress, size_t dwSize, u32 dwFreeType) { return __api().VirtualFree(lpAddress, dwSize, dwFreeType); }

@@ -18,8 +18,8 @@ using winproc = size_t (__stdcall *)();
 using TyGetProcAddress = winproc __stdcall (handle hModule, const char* lpProcName);
 using TyGetModuleHandleA = handle __stdcall (const char* lpModuleName);
 using TyGetModuleHandleW = handle __stdcall (const wchar_t* lpModuleName);
-using TyLoadLibraryA = handle __stdcall (char* lpLibFileName);
-using TyLoadLibraryW = handle __stdcall (wchar_t* lpLibFileName);
+using TyLoadLibraryA = handle __stdcall (const char* lpLibFileName);
+using TyLoadLibraryW = handle __stdcall (const wchar_t* lpLibFileName);
 using TyFreeLibrary = winbool __stdcall (handle hLibModule);
 
 namespace dll {

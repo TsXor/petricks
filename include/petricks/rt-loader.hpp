@@ -10,14 +10,18 @@ namespace pe {
 namespace runtime {
 namespace loader {
 
+template <typename WinApi = winapi_default>
+#ifdef PETRICKS_ENABLE_CONCEPTS
+    requires winapi_provider<WinApi>
+#endif
 class memory_module {
-    ebco_pair<winapi_default, void*> _impl;
+    ebco_pair<WinApi, void*> _impl;
 
 public:
-    memory_module(const winapi_default& api = {}) : _impl(api, nullptr) {}
+    memory_module(const WinApi& api = {}) : _impl(api, nullptr) {}
     ~memory_module() { close(); }
 
-    const winapi_default& api() const { return _impl.first(); }
+    const WinApi& api() const { return _impl.first(); }
     void* base_addr() const { return _impl.second(); }
     operator bool() { return bool(base_addr()); }
 
@@ -30,15 +34,15 @@ public:
     }; // enum class errc
 
     TyDllMain* entry() {
-        auto& base_addr = _impl.second();
+        void*& base_addr = _impl.second();
         if (!base_addr) { return nullptr; }
         auto& loaded_opthdr = reinterpret_cast<image::dos_header*>(base_addr)->nthdr().OptionalHeader.local;
         return loaded_opthdr.AddressOfEntryPoint ? ptr_at<TyDllMain>(base_addr, loaded_opthdr.AddressOfEntryPoint) : nullptr;
     }
 
     errc open(void* image) {
-        auto& winapi = _impl.first();
-        auto& base_addr = _impl.second();
+        WinApi& api = _impl.first();
+        void*& base_addr = _impl.second();
 
         // basic signature and machine check
         auto& doshdr = *reinterpret_cast<image::dos_header*>(image);
@@ -49,8 +53,8 @@ public:
         auto& opthdr = nthdr.OptionalHeader.local;
 
         // allocate module memory
-        base_addr = winapi.VirtualAlloc(reinterpret_cast<void*>(opthdr.ImageBase), opthdr.SizeOfImage, mem::reserve, page::readwrite);
-        if (!base_addr) { base_addr = winapi.VirtualAlloc(nullptr, opthdr.SizeOfImage, mem::reserve, page::readwrite); }
+        base_addr = api.VirtualAlloc(reinterpret_cast<void*>(opthdr.ImageBase), opthdr.SizeOfImage, mem::reserve, page::readwrite);
+        if (!base_addr) { base_addr = api.VirtualAlloc(nullptr, opthdr.SizeOfImage, mem::reserve, page::readwrite); }
         if (!base_addr) { return errc::alloc_fail; }
         size_t reloc_offset = reinterpret_cast<size_t>(base_addr) - opthdr.ImageBase;
 
@@ -65,11 +69,11 @@ public:
             auto sec_addr = ptr_at<void>(base_addr, sechdr.VirtualAddress);
             if (sechdr.SizeOfRawData == 0) {
                 if (opthdr.SectionAlignment != 0) {
-                    auto empty_sec = winapi.VirtualAlloc(sec_addr, opthdr.SectionAlignment, mem::commit, page::readwrite);
+                    void* empty_sec = api.VirtualAlloc(sec_addr, opthdr.SectionAlignment, mem::commit, page::readwrite);
                     memset(empty_sec, 0, opthdr.SectionAlignment);
                 }
             } else {
-                auto section = winapi.VirtualAlloc(sec_addr, sechdr.SizeOfRawData, mem::commit, page::readwrite);
+                void* section = api.VirtualAlloc(sec_addr, sechdr.SizeOfRawData, mem::commit, page::readwrite);
                 memcpy(section, ptr_at<void>(image, sechdr.PointerToRawData), sechdr.SizeOfRawData);
             }
         }
@@ -113,7 +117,7 @@ public:
 
         // import dependencies
         for (auto& import_desc : image::imports_view(loaded_opthdr)) {
-            auto depmod = winapi.LoadLibraryA(ptr_at<char>(base_addr, import_desc.Name));
+            handle depmod = api.LoadLibraryA(ptr_at<char>(base_addr, import_desc.Name));
             if (!depmod) { continue; }
             auto lookup_table = ptr_at<image::thunk_data>(base_addr, import_desc.OriginalFirstThunk);
             auto address_table = ptr_at<image::thunk_data>(base_addr, import_desc.FirstThunk);
@@ -121,14 +125,14 @@ public:
                 char* name = lookup_table[i].flag()
                     ? reinterpret_cast<char*>(address_table[i].ordinal())
                     : ref_at<image::import_by_name>(base_addr, lookup_table[i].name_rva()).Name;
-                address_table[i].value = reinterpret_cast<size_t>(winapi.GetProcAddress(depmod, name));
+                address_table[i].value = reinterpret_cast<size_t>(api.GetProcAddress(depmod, name));
             }
         }
 
         // set section protection
         for (auto& sechdr : loaded_nthdr.sechdrs()) {
             if (sechdr.Characteristics & image::scn::mem_discardable) {
-                winapi.VirtualFree(ptr_at<void>(base_addr, sechdr.VirtualAddress), sechdr.SizeOfRawData, mem::decommit);
+                api.VirtualFree(ptr_at<void>(base_addr, sechdr.VirtualAddress), sechdr.SizeOfRawData, mem::decommit);
             } else {
                 u32 sec_prot, sec_old_prot;
                 switch (sechdr.Characteristics & (image::scn::mem_read | image::scn::mem_write)) {
@@ -144,7 +148,7 @@ public:
                 else if (sechdr.Characteristics & image::scn::cnt_initialized_data) { sec_size = loaded_opthdr.SizeOfInitializedData; }
                 else if (sechdr.Characteristics & image::scn::cnt_uninitialized_data) { sec_size = loaded_opthdr.SizeOfUninitializedData; }
                 if (sec_size != 0) {
-                    winapi.VirtualProtect(ptr_at<void>(base_addr, sechdr.VirtualAddress), sechdr.SizeOfRawData, sec_prot, &sec_old_prot);
+                    api.VirtualProtect(ptr_at<void>(base_addr, sechdr.VirtualAddress), sechdr.SizeOfRawData, sec_prot, &sec_old_prot);
                 }
             }
         }
@@ -159,8 +163,8 @@ public:
     }
 
     void close() {
-        auto& winapi = _impl.first();
-        auto& base_addr = _impl.second();
+        WinApi& api = _impl.first();
+        void*& base_addr = _impl.second();
 
         if (!base_addr) { return; }
         auto& loaded_nthdr = reinterpret_cast<image::dos_header*>(base_addr)->nthdr();
@@ -171,11 +175,11 @@ public:
 
         // free dependencies
         for (auto& import_desc : image::imports_view(loaded_opthdr)) {
-            auto depmod = winapi.GetModuleHandleA(ptr_at<char>(base_addr, import_desc.Name));
-            if (depmod) { winapi.FreeLibrary(depmod); }
+            handle depmod = api.GetModuleHandleA(ptr_at<char>(base_addr, import_desc.Name));
+            if (depmod) { api.FreeLibrary(depmod); }
         }
 
-        winapi.VirtualFree(base_addr, 0, mem::release);
+        api.VirtualFree(base_addr, 0, mem::release);
     }
 }; // class memory_module
 
