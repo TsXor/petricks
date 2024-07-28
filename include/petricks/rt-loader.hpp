@@ -6,7 +6,9 @@
 #error This file needs win32/win64 environment!
 #endif
 
-namespace pe::runtime::loader {
+namespace pe {
+namespace runtime {
+namespace loader {
 
 class memory_module {
     ebco_pair<winapi_default, void*> _impl;
@@ -177,4 +179,6 @@ public:
     }
 }; // class memory_module
 
-} // namespace pe::runtime::loader
+} // namespace loader
+} // namespace runtime
+} // namespace pe

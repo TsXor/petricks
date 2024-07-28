@@ -8,7 +8,8 @@
 #error This file needs win32/win64 environment!
 #endif
 
-namespace pe::runtime {
+namespace pe {
+namespace runtime {
 
 using handle = void *;
 using winbool = i32;
@@ -160,6 +161,7 @@ struct unicode_string {
     }
 }; // struct unicode_string
 
-} // namespace pe::runtime
+} // namespace runtime
+} // namespace pe
 
 #endif // __PETRICKS_RT_BASICS__

@@ -1,3 +1,9 @@
+/**
+ *  原代码来自：https://blog.csdn.net/lyshark_csdn/article/details/124938869
+ *  此文件为基于petricks的现代C++重写
+ *  注：虽然大部分时候CSDN不是真正的信息源，但是我并没有在别处搜索到这篇
+ */
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -60,7 +66,7 @@ int main(int argc, char *argv[]) {
             std::cout << "打开文件失败" << std::endl;
             return 0;
         }
-        ssize_t v = file.tellg();
+        size_t v = file.tellg();
         file_buf.resize(file.tellg());
         file.seekg(0, std::ios::beg);
         file.read(file_buf.data(), file_buf.size());

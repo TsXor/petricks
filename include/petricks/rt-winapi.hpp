@@ -9,7 +9,8 @@
  *  Usage of Win32 API in this project is like allocator in STL -- you can use the default one or write one yourself!
  */
 
-namespace pe::runtime {
+namespace pe {
+namespace runtime {
 
 
 struct winapi_dynamic {
@@ -139,4 +140,5 @@ struct winapi_default {
 }; // struct winapi_static
 
 
-} // namespace pe::runtime
+} // namespace runtime
+} // namespace pe

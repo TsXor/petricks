@@ -11,7 +11,9 @@
 #error This file needs win32/win64 environment!
 #endif
 
-namespace pe::runtime::reflect {
+namespace pe {
+namespace runtime {
+namespace reflect {
 
 // compares two strings, ignoring case and assuming only ascii chars
 template <typename CharT1, typename CharT2>
@@ -117,6 +119,8 @@ static inline void* get_proc_addr(void* mod_base, const char* name) {
     return nullptr;
 }
 
-} // namespace pe::runtime::reflect
+} // namespace reflect
+} // namespace runtime
+} // namespace pe
 
 #endif // __PETRICKS_RT_REFLECT__

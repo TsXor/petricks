@@ -8,7 +8,8 @@
 #error This file needs win32/win64 environment!
 #endif
 
-namespace pe::runtime {
+namespace pe {
+namespace runtime {
 
 /* A mini rip of winternl.h and phnt ... */
 
@@ -113,6 +114,7 @@ struct teb {
     void *TlsExpansionSlots;
 }; // struct teb
 
-} // namespace pe::runtime
+} // namespace runtime
+} // namespace pe
 
 #endif // __PETRICKS_RT_PEBTEB__

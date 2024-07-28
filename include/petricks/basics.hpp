@@ -53,9 +53,7 @@ public:
     iterator end() { return {nullptr}; }
 }; // class sentinel_span
 
-} // namespace pe
-
-namespace pe::image {
+namespace image {
 
 constexpr size_t numberof_directory_entries = 16;
 constexpr u32 dos_signature = 0x5A4D;
@@ -444,6 +442,8 @@ using thunk_data = thunk_data64;
 using thunk_data = thunk_data32;
 #endif
 
-} // namespace pe::image
+} // namespace image
+
+} // namespace pe
 
 #endif // __PETRICKS_BASICS__
