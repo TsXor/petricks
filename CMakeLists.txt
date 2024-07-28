@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(petricks)
+add_library(${PROJECT_NAME} INTERFACE)
+target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_11)
+
+option(PETRICKS_BUILD_EXAMPLE "build example" OFF)
+if (PETRICKS_BUILD_EXAMPLE)
+    file(GLOB_RECURSE PETRICKS_EXAMPLE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp)
+    foreach (EXAMPLE_SOURCE ${PETRICKS_EXAMPLE_SOURCES})
+        get_filename_component(EXAMPLE_NAME ${EXAMPLE_SOURCE} NAME_WE)
+        add_executable(${EXAMPLE_NAME} ${EXAMPLE_SOURCE})
+        target_link_libraries(${EXAMPLE_NAME} ${PROJECT_NAME})
+    endforeach()
+endif()

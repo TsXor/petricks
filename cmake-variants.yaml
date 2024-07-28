@@ -1,0 +1,25 @@
+buildType:
+  default: debug
+  choices:
+    debug:
+      short: Debug
+      long: Emit debug information
+      buildType: Debug
+    release:
+      short: Release
+      long: Optimize generated code
+      buildType: MinSizeRel
+
+buildExamples:
+  default: "no"
+  choices:
+    "yes":
+      short: Examples
+      long: build example programs
+      settings:
+        PETRICKS_BUILD_EXAMPLE: "ON"
+    "no":
+      short: NoExamples
+      long: do not build example programs
+      settings:
+        PETRICKS_BUILD_EXAMPLE: "OFF"
