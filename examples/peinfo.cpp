@@ -1,7 +1,6 @@
 /**
- *  原代码来自：https://blog.csdn.net/lyshark_csdn/article/details/124938869
+ *  原代码来自：https://www.cnblogs.com/LyShark/articles/15019702.html
  *  此文件为基于petricks的现代C++重写
- *  注：虽然大部分时候CSDN不是真正的信息源，但是我并没有在别处搜索到这篇
  */
 
 #include <iostream>
