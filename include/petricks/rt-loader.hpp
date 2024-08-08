@@ -59,6 +59,7 @@ public:
         size_t reloc_offset = reinterpret_cast<size_t>(base_addr) - opthdr.ImageBase;
 
         // copy headers and set real module base
+        api.VirtualAlloc(base_addr, opthdr.SizeOfHeaders, mem::commit, page::readwrite);
         memcpy(base_addr, image, opthdr.SizeOfHeaders);
         auto& loaded_nthdr = reinterpret_cast<image::dos_header*>(base_addr)->nthdr();
         auto& loaded_opthdr = loaded_nthdr.OptionalHeader.local;
@@ -86,9 +87,9 @@ public:
                     // skip this if last is highadj
                     if (is_highadj_param) { is_highadj_param = false; continue; }
                     // Note: for most modules, only highlow and dir64 is used.
+                    auto patch_pos = ptr_at<void>(base_addr, reloc_base.VirtualAddress + reloc.offset());
                     switch (reloc.flag()) {
                         case image::rel_based::absolute: break;
-                        auto patch_pos = ptr_at<void>(base_addr, reloc_base.VirtualAddress + reloc.offset());
                         case image::rel_based::high: {
                             ref_at<u16 __unaligned>(patch_pos) += u32(reloc_offset) >> 16;
                         } break;
@@ -180,6 +181,15 @@ public:
         }
 
         api.VirtualFree(base_addr, 0, mem::release);
+        base_addr = nullptr;
+    }
+
+    template <typename FuncT>
+    FuncT* proc(const char* name) {
+        WinApi& api = _impl.first();
+        void*& base_addr = _impl.second();
+        // GetProcAddress cannot find functions here, use handmade implementation.
+        return reinterpret_cast<FuncT*>(reflect::get_proc_addr(base_addr, name));
     }
 }; // class memory_module
 

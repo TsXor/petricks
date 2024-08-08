@@ -383,7 +383,7 @@ static inline sentinel_view<base_relocation> basereloc_view(void* base, OpthdrT&
 }
 template <typename OpthdrT>
 static inline sentinel_view<base_relocation> basereloc_view(OpthdrT& opthdr) {
-    return imports_view(reinterpret_cast<void*>(opthdr.ImageBase), opthdr);
+    return basereloc_view(reinterpret_cast<void*>(opthdr.ImageBase), opthdr);
 }
 
 struct import_descriptor {

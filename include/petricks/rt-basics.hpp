@@ -128,11 +128,11 @@ public:
         bool operator==(iterator other) const { return _pos == other._pos; }
         bool operator!=(iterator other) const { return !(*this == other); }
         iterator &operator++() {
-            _pos = _real()->*node_rel.Flink;
+            _pos = (_real()->*node_rel).Flink;
             return *this;
         }
         iterator &operator--() {
-            _pos = _real()->*node_rel.Blink;
+            _pos = (_real()->*node_rel).Blink;
             return *this;
         }
     };
