@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <iostream>
-#include "petricks/rt-basics.hpp"
+#include "petricks.hpp"
 
 namespace dll = pe::runtime::dll;
 using pe::runtime::winbool;

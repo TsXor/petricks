@@ -15,33 +15,12 @@ namespace pe {
 namespace runtime {
 namespace reflect {
 
-// compares two strings, ignoring case and assuming only ascii chars
-template <typename CharT1, typename CharT2>
-bool windows_style_cmp(basic_string_view<CharT1> s1, basic_string_view<CharT2> s2) {
-    if (s1.size() != s2.size()) { return false; }
-    for (size_t i = 0; i < s1.size(); ++i) {
-        auto ch1 = s1[i]; auto ch2 = s2[i];
-        if (ch1 >= 'A' && ch1 <= 'Z') { ch1 += 'a' - 'A'; }
-        if (ch2 >= 'A' && ch2 <= 'Z') { ch2 += 'a' - 'A'; }
-        if (ch1 != ch2) { return false; }
-    }
-    return true;
-}
-
 template <typename CharT1, typename CharT2>
 bool dll_name_cmp(basic_string_view<CharT1> s1, basic_string_view<CharT2> s2) {
-    if (windows_style_cmp<CharT1, char>(s1.substr(s1.size() - 4), string_view(".dll"))) { s1 = s1.substr(0, s1.size() - 4); }
-    if (windows_style_cmp<CharT2, char>(s2.substr(s2.size() - 4), string_view(".dll"))) { s2 = s2.substr(0, s2.size() - 4); }
+    string_view suffix(".dll");
+    if (windows_style_cmp<CharT1, char>(s1.substr(s1.size() - suffix.size()), suffix)) { s1 = s1.substr(0, s1.size() - suffix.size()); }
+    if (windows_style_cmp<CharT2, char>(s2.substr(s2.size() - suffix.size()), suffix)) { s2 = s2.substr(0, s2.size() - suffix.size()); }
     return windows_style_cmp<CharT1, CharT2>(s1, s2);
-}
-
-static inline size_t convert_decimal(const char* str) {
-    size_t result = 0;
-    for (auto pos = str; *pos != 0; ++pos) {
-        result *= 10;
-        result += (*pos  - '0');
-    }
-    return result;
 }
 
 static inline teb* get_current_teb() {
@@ -112,7 +91,7 @@ static inline void* get_proc_addr(void* mod_base, const char* name) {
             auto forward_mod_base = get_module_base(string_view(forwarder_string, dot_pos));
             if (forward_mod_base == nullptr) { return nullptr; }
             auto forward_name = forwarder_string + dot_pos + 1;
-            if (forward_name[0] == '#') { forward_name = reinterpret_cast<char*>(convert_decimal(forward_name + 1)); }
+            if (forward_name[0] == '#') { forward_name = reinterpret_cast<char*>(number_from_string(forward_name + 1)); }
             return get_proc_addr(forward_mod_base, forward_name);
         }
     }

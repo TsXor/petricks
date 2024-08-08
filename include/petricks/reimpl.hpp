@@ -64,6 +64,33 @@ using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 
 
+// compares two strings, ignoring case and assuming only ascii chars
+template <typename CharT1, typename CharT2>
+bool windows_style_cmp(basic_string_view<CharT1> s1, basic_string_view<CharT2> s2) {
+    if (s1.size() != s2.size()) { return false; }
+    for (size_t i = 0; i < s1.size(); ++i) {
+        auto ch1 = s1[i]; auto ch2 = s2[i];
+        if (ch1 >= 'A' && ch1 <= 'Z') { ch1 += 'a' - 'A'; }
+        if (ch2 >= 'A' && ch2 <= 'Z') { ch2 += 'a' - 'A'; }
+        if (ch1 != ch2) { return false; }
+    }
+    return true;
+}
+
+static inline ssize_t number_from_string(const char* str, size_t base = 10) {
+    bool negative = false;
+    if (*str == '-') { ++str; negative = true; }
+    ssize_t result = 0;
+    for (auto pos = str; *pos != 0; ++pos) {
+        result *= base;
+        if (*pos >= '0' && *pos <= '9') { result += (*pos - '0'); }
+        else if (*pos >= 'A' && *pos <= 'Z') { result += (*pos - 'A' + 10); }
+        else if (*pos >= 'a' && *pos <= 'z') { result += (*pos - 'a' + 10); }
+    }
+    return negative ? -result : result;
+}
+
+
 template <class T1, class T2>
 class ebco_pair : protected std::remove_cv<T1>::type {
     T2 second_;
